@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POD 006 // S.E.E.S. TACTICAL MOD INTERFACE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Dynamic Water Caustics Canvas -->
+  <canvas id="caustics-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="app-container">
+    <!-- Header Bar -->
+    <header class="header-bar">
+      <div class="brand-section">
+        <div class="sees-badge"><span>S.E.E.S.</span></div>
+        <div class="brand-title">
+          <h1>POD 006</h1>
+          <span class="brand-sub">TACTICAL MOD INTERFACE // DARK HOUR PROTOCOL</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-audio-toggle" class="btn-slanted" title="Toggle UI Sound Effects">
+          <span id="audio-icon">🔊 SFX ON</span>
+        </button>
+        <button id="btn-clean-slate" class="btn-slanted btn-danger" title="Cleanly revert all mods to original state">
+          <span>⚠️ CLEAN SLATE</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Game Directory Status Bar -->
+    <section class="game-dir-bar">
+      <div class="game-dir-info">
+        <div id="game-status-pill" class="status-pill">
+          <div class="status-dot"></div>
+          <span id="game-status-text">EVOKER READY</span>
+        </div>
+        <div class="game-path-text">
+          <strong>TARGET:</strong>
+          <span id="game-path-display">Scanning steam library...</span>
+        </div>
+      </div>
+      <div class="game-dir-actions">
+        <button id="btn-browse-dir" class="btn-slanted btn-small"><span>CHANGE FOLDER</span></button>
+        <button id="btn-open-dir" class="btn-slanted btn-small"><span>OPEN IN EXPLORER</span></button>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-staging">
+        <span>01 // STAGING & DEPLOYMENT</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-roster">
+        <span>02 // INSTALLED ROSTER (<span id="installed-count">0</span>)</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-logs">
+        <span>03 // TACTICAL LOGS</span>
+      </button>
+    </nav>
+
+    <!-- Content Panels -->
+    <main class="content-area">
+      <!-- TAB 1: STAGING & DEPLOYMENT -->
+      <section id="tab-staging" class="tab-panel active">
+        <!-- Staging Error Banner -->
+        <div id="staging-error-banner" class="staging-error-card" style="display: none;">
+          <div class="error-badge"><span>! SYSTEM ALERT !</span></div>
+          <div class="error-msg-box">
+            <h4>TACTICAL ARCHIVE ERROR</h4>
+            <p id="staging-error-text">Failed to inspect archive (may be damaged or encrypted).</p>
+          </div>
+          <button id="btn-dismiss-error" class="btn-slanted btn-small"><span>DISMISS</span></button>
+        </div>
+
+        <!-- Holographic Dropzone -->
+        <div id="dropzone" class="dropzone-container">
+          <div class="dropzone-reticle">
+            <svg viewBox="0 0 24 24">
+              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+            </svg>
+          </div>
+          <div class="dropzone-text">
+            <h2>DRAG & DROP MOD ARCHIVE HERE</h2>
+            <p>SUPPORTED FORMATS: .ZIP / .7Z / .RAR (INCLUDING RAR5) • MULTI-FILE STAGING SUPPORTED</p>
+          </div>
+          <button id="btn-browse-archive" class="btn-slanted" style="margin-top: 14px;">
+            <span>SELECT ARCHIVE FILES</span>
+          </button>
+        </div>
+
+        <!-- Multi-Archive Staging Queue Bar -->
+        <div id="staging-queue-container" class="staging-queue-card" style="display: none;">
+          <div class="sq-header">
+            <div class="sq-header-left">
+              <span class="sq-title">STAGED ARCHIVE QUEUE (<span id="sq-count">0</span>)</span>
+            </div>
+            <div class="sq-header-actions">
+              <button id="btn-batch-install" class="btn-all-out-batch" style="display: none;" title="Execute batch deployment for all staged archives">
+                <span id="batch-install-btn-text">⚡ ALL-OUT ATTACK (INSTALL ALL: 0 MODS)</span>
+              </button>
+              <button id="btn-clear-queue" class="btn-slanted btn-small"><span>CLEAR QUEUE</span></button>
+            </div>
+          </div>
+          <div id="sq-chips" class="sq-chips-container custom-scroll"></div>
+        </div>
+
+        <!-- Pre-Install Blueprint Card (Dynamically displayed upon archive drop/selection) -->
+        <div id="blueprint-card" class="blueprint-card" style="display: none;">
+          <div class="bp-header">
+            <div class="bp-title">
+              <h3 id="bp-mod-title">ALL-OUT ATTACK BLUEPRINT</h3>
+              <span id="bp-archive-label" class="bp-archive-name">ARCHIVE: sample.zip</span>
+            </div>
+            <div class="bp-stats">
+              <div class="bp-stat-pill"><span id="bp-stat-files">0 FILES</span></div>
+              <div class="bp-stat-pill"><span id="bp-stat-size">0.0 MB</span></div>
+            </div>
+          </div>
+
+          <!-- Ambiguous Destination Alert Banner -->
+          <div id="bp-ambiguous-banner" class="bp-alert-banner" style="display: none;">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-text">
+              <strong>AMBIGUOUS MOD ROUTING DETECTED:</strong>
+              <span>This archive lacks standard 'nativePC' or root folder conventions. Specify destination below so Pod 006 knows where to put it.</span>
+            </div>
+          </div>
+
+          <!-- Mod Name Customization -->
+          <div class="bp-section">
+            <div class="bp-section-title">
+              <span>TACTICAL IDENTIFIER (MOD NAME)</span>
+            </div>
+            <input type="text" id="bp-mod-name-input" class="input-slanted" placeholder="Enter Mod Name...">
+          </div>
+
+          <!-- Variant Selector (shown if archive has variants) -->
+          <div id="bp-variant-section" class="bp-section" style="display: none;">
+            <div class="bp-section-title">
+              <span>TACTICAL VARIANT SELECTION (CHOOSE EDITION)</span>
+            </div>
+            <div id="bp-variant-container" class="variant-grid"></div>
+          </div>
+
+          <!-- Destination Matrix Override -->
+          <div class="bp-section">
+            <div class="bp-section-title">
+              <span>DESTINATION MATRIX</span>
+            </div>
+            <div class="dest-row">
+              <select id="bp-dest-override" class="select-slanted">
+                <option value="auto">Auto-Detect Routing (Default: nativePC / plugins)</option>
+                <option value="nativePC">Force nativePC Subdirectory</option>
+                <option value="plugins">Force nativePC/plugins (DLL Plugins)</option>
+                <option value="root">Force Game Root Directory (Root Loaders / Hooks)</option>
+                <option value="Lua">Force Lua Directory</option>
+                <option value="custom">Custom Subdirectory (User Defined)...</option>
+              </select>
+            </div>
+            <div id="bp-custom-dest-row" class="dest-row" style="display: none; margin-top: 8px;">
+              <input type="text" id="bp-custom-dest-input" class="input-slanted" placeholder="e.g. nativePC/sound/wwise or plugins...">
+            </div>
+          </div>
+
+          <!-- Collision Priority Section (shown if collisions exist) -->
+          <div id="bp-collision-box" class="bp-section collision-box" style="display: none;">
+            <div class="bp-section-title">
+              <span>⚠️ COLLISION ALERT: <span id="bp-collision-count">0</span> FILES ALREADY EXIST</span>
+            </div>
+            <p style="font-size: 13px; color: #ffb3c1;">Target files already exist in game directory. Choose priority policy:</p>
+            <div class="collision-actions">
+              <label class="radio-p3r">
+                <input type="radio" name="collision-policy" value="overwrite_backup" checked>
+                <span>PRIORITIZE THIS MOD (OVERWRITE & SMART-BACKUP PREVIOUS)</span>
+              </label>
+              <label class="radio-p3r">
+                <input type="radio" name="collision-policy" value="skip">
+                <span>SKIP COLLIDING FILES (KEEP PREVIOUS VERSIONS)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Planned Files Table Preview -->
+          <div class="bp-section">
+            <div class="bp-section-title">
+              <span>DEPLOYMENT MANIFEST PREVIEW (<span id="bp-preview-count">0</span> FILES)</span>
+            </div>
+            <div class="file-preview-box custom-scroll">
+              <table class="table-p3r">
+                <thead>
+                  <tr>
+                    <th>ARCHIVE SOURCE</th>
+                    <th>TARGET DESTINATION</th>
+                    <th>SIZE</th>
+                    <th>STATUS / OWNER</th>
+                  </tr>
+                </thead>
+                <tbody id="bp-file-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Matching Game Files Detected Banner -->
+          <div id="bp-matching-banner" class="bp-alert-banner bp-matching-banner" style="display: none;">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-text">
+              <strong id="bp-matching-banner-title">MATCHING GAME FILES DETECTED</strong>
+              <span id="bp-matching-banner-text">0 of 0 files found in game directory (Installed Manually or Previously).</span>
+            </div>
+          </div>
+
+          <!-- Dual-Action Buttons Container -->
+          <div class="bp-actions-container">
+            <button id="btn-purge-action" class="btn-all-out-purge" style="display: none;" title="Safely remove matching files from game directory">
+              <span>⚠️ PURGE / UNINSTALL FROM GAME</span>
+            </button>
+            <button id="btn-blueprint-batch-install" class="btn-all-out-batch" style="display: none;" title="Execute batch deployment for all staged archives">
+              <span id="bp-batch-install-btn-text">⚡ ALL-OUT ATTACK (INSTALL ALL: 0 MODS)</span>
+            </button>
+            <button id="btn-execute-install" class="btn-all-out-attack">
+              <span>>>> ALL-OUT ATTACK // EXECUTE DEPLOYMENT <<<</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: INSTALLED ROSTER -->
+      <section id="tab-roster" class="tab-panel">
+        <div class="roster-header">
+          <input type="text" id="roster-search" class="input-slanted roster-search" placeholder="Filter installed mods...">
+          <button id="btn-refresh-roster" class="btn-slanted btn-small"><span>REFRESH</span></button>
+        </div>
+        <div id="roster-grid" class="mods-grid custom-scroll"></div>
+        <div id="roster-empty" class="empty-roster" style="display: none;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="rgba(0, 212, 255, 0.4)">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <h3>NO MODS DEPLOYED. SYSTEM STANDBY.</h3>
+          <p>Drop a mod archive into Staging to execute deployment.</p>
+        </div>
+      </section>
+
+      <!-- TAB 3: TACTICAL LOGS -->
+      <section id="tab-logs" class="tab-panel">
+        <div class="logs-container">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-family: var(--font-heading); font-size: 20px; color: var(--cyan-core); letter-spacing: 1.5px;">SYSTEM ACTIVITY & ROLLBACK RECORDS</span>
+            <button id="btn-open-backup-dir" class="btn-slanted btn-small"><span>OPEN BACKUP FOLDER (.pod006_backup)</span></button>
+          </div>
+          <div id="terminal-logs" class="log-terminal custom-scroll">
+            <div class="log-line info">[INIT] Pod 006 S.E.E.S. Tactical Interface initialized.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ALL-OUT ATTACK CINEMATIC OVERLAY (SINGLE MOD) -->
+  <div id="aoa-overlay" class="aoa-overlay">
+    <div class="aoa-speedlines"></div>
+    <div class="aoa-banner">
+      <h1>ALL-OUT ATTACK!</h1>
+      <div id="aoa-status-text" class="aoa-status">DEPLOYING ASSETS & SMART BACKUP...</div>
+      <div class="aoa-progress">
+        <div id="aoa-progress-bar" class="aoa-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONA 3 RELOAD BATCH ALL-OUT ATTACK HUD OVERLAY -->
+  <div id="aoa-batch-overlay" class="aoa-overlay aoa-batch-overlay">
+    <div class="aoa-speedlines"></div>
+    
+    <!-- Active Batch Deployment Container -->
+    <div id="aoa-batch-active" class="aoa-batch-container">
+      <div class="aoa-batch-header">
+        <div class="aoa-batch-badge"><span>S.E.E.S. BATCH DEPLOYMENT</span></div>
+        <h2 class="aoa-batch-title">ALL-OUT ATTACK ENGAGED</h2>
+        <div class="aoa-batch-sub">MASS MOD SEQUENCING PROTOCOL</div>
+      </div>
+
+      <!-- Progress & Counter Area -->
+      <div class="aoa-batch-progress-card">
+        <div class="aoa-batch-counter-row">
+          <span id="aoa-batch-counter" class="aoa-batch-counter">DEPLOYING: [1 of 1] // mod.zip</span>
+          <span id="aoa-batch-percent" class="aoa-batch-percent">0%</span>
+        </div>
+        <div class="aoa-progress-bar-wrap">
+          <div id="aoa-batch-progress-bar" class="aoa-batch-progress-fill" style="width: 0%;"></div>
+        </div>
+        <div class="aoa-ticker-row">
+          <div class="ticker-pulse"></div>
+          <div id="aoa-batch-ticker" class="aoa-batch-ticker">Initializing combat sequence...</div>
+        </div>
+      </div>
+
+      <!-- Tactical Decision Required Card (Visible only when paused for variants/destination) -->
+      <div id="aoa-batch-decision-card" class="aoa-decision-card" style="display: none;">
+        <div class="decision-header">
+          <div class="decision-alert-badge"><span>! TACTICAL DECISION REQUIRED !</span></div>
+          <h3 id="aoa-decision-mod-title">SELECT VARIANT FOR MOD</h3>
+        </div>
+        
+        <!-- Variant Selection inside HUD -->
+        <div id="aoa-decision-variant-box" style="display: none;">
+          <div class="decision-label">TACTICAL VARIANT SELECTION (CHOOSE EDITION):</div>
+          <div id="aoa-decision-variant-list" class="aoa-decision-grid custom-scroll"></div>
+        </div>
+
+        <!-- Destination Override inside HUD -->
+        <div id="aoa-decision-dest-box" style="display: none; margin-top: 10px;">
+          <div class="decision-label">AMBIGUOUS ROUTING - CHOOSE DESTINATION:</div>
+          <select id="aoa-decision-dest-select" class="select-slanted">
+            <option value="nativePC">nativePC (Standard MHW mods)</option>
+            <option value="plugins">nativePC/plugins (DLL Plugins)</option>
+            <option value="root">Game Root Directory (Root Loaders / Hooks)</option>
+            <option value="Lua">Lua Directory</option>
+            <option value="custom">Custom Subdirectory...</option>
+          </select>
+          <input type="text" id="aoa-decision-custom-input" class="input-slanted" style="display: none; margin-top: 6px;" placeholder="e.g. nativePC/sound/wwise or plugins">
+        </div>
+
+        <div class="decision-actions">
+          <button id="btn-aoa-skip-mod" class="btn-slanted btn-small"><span>SKIP THIS MOD</span></button>
+          <button id="btn-aoa-abort-decision" class="btn-slanted btn-danger btn-small"><span>🛑 ABORT BATCH</span></button>
+          <button id="btn-aoa-confirm-decision" class="btn-slanted btn-confirm-choice"><span>⚡ CONFIRM CHOICE & RESUME BATCH</span></button>
+        </div>
+      </div>
+
+      <!-- Error Dialog Card (Archive Corrupted / Inspection / Extraction Failure) -->
+      <div id="aoa-batch-error-card" class="aoa-decision-card aoa-error-card" style="display: none;">
+        <div class="decision-header">
+          <div class="error-badge"><span>! SYSTEM ALERT !</span></div>
+          <h3 id="aoa-error-archive-title">ARCHIVE CORRUPTED OR DAMAGED</h3>
+        </div>
+        <p id="aoa-error-details" class="aoa-error-text">Failed to extract or inspect archive files.</p>
+        <div class="decision-actions">
+          <button id="btn-aoa-error-skip" class="btn-slanted btn-confirm-choice"><span>⏭️ SKIP THIS MOD & CONTINUE</span></button>
+          <button id="btn-aoa-error-abort" class="btn-slanted btn-danger"><span>🛑 ABORT BATCH</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Battle Finish Screen (Shown upon batch completion) -->
+    <div id="aoa-batch-finish" class="aoa-finish-container" style="display: none;">
+      <div class="aoa-finish-banner">
+        <div class="finish-badge"><span>MISSION ACCOMPLISHED</span></div>
+        <h1 id="aoa-finish-title">ALL-OUT ATTACK COMPLETE</h1>
+        <div class="finish-sub" id="aoa-finish-sub">S.E.E.S. BATCH DEPLOYMENT SUMMARY</div>
+      </div>
+
+      <div class="finish-stats-card">
+        <div class="finish-stat-col">
+          <span class="stat-number" id="finish-stat-mods">0</span>
+          <span class="stat-label">MODS DEPLOYED</span>
+        </div>
+        <div class="finish-stat-col">
+          <span class="stat-number" id="finish-stat-files">0</span>
+          <span class="stat-label">FILES WRITTEN</span>
+        </div>
+        <div class="finish-stat-col">
+          <span class="stat-number" id="finish-stat-backups">0</span>
+          <span class="stat-label">BACKUPS CREATED</span>
+        </div>
+        <div class="finish-stat-col">
+          <span class="stat-number" id="finish-stat-skipped">0</span>
+          <span class="stat-label">SKIPPED / BYPASSED</span>
+        </div>
+      </div>
+
+      <div id="finish-items-list" class="finish-items-box custom-scroll"></div>
+
+      <button id="btn-aoa-return-base" class="btn-all-out-attack" style="max-width: 320px; margin-top: 18px;">
+        <span>>>> RETURN TO BASE <<<</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- INSPECT FILES MODAL -->
+  <div id="modal-inspect" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="inspect-title">MOD ASSETS</h3>
+        <button id="btn-close-inspect" class="btn-slanted btn-small"><span>CLOSE</span></button>
+      </div>
+      <div class="modal-body custom-scroll">
+        <table class="table-p3r">
+          <thead>
+            <tr>
+              <th>FILE PATH</th>
+              <th>SIZE</th>
+              <th>BACKUP STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="inspect-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM ACTION MODAL -->
+  <div id="modal-confirm" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="confirm-title">CONFIRM PROTOCOL</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-message" style="font-size: 16px; line-height: 1.5; color: #eee;"></p>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-confirm-cancel" class="btn-slanted btn-small"><span>CANCEL</span></button>
+        <button id="btn-confirm-ok" class="btn-slanted btn-small btn-danger"><span>CONFIRM EXECUTION</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE PURGE REVIEW MODAL -->
+  <div id="modal-purge" class="modal-backdrop">
+    <div class="modal-card modal-purge-card">
+      <div class="modal-header modal-header-danger">
+        <div class="modal-title-group">
+          <h3 id="purge-modal-title">TARGET PURGE PROTOCOL</h3>
+          <span id="purge-modal-subtitle" class="purge-subtitle">ARCHIVE: sample.zip</span>
+        </div>
+        <button id="btn-close-purge" class="btn-slanted btn-small"><span>CLOSE</span></button>
+      </div>
+      
+      <div class="purge-banner-danger">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-text">
+          <strong>CONFIRM PURGE TARGETS:</strong>
+          <span>The following matching files exist in your game directory. Selected files will be safely backed up to <code class="p3r-code">.pod006_backup/manual_purge/</code> before removal. Empty parent folders will be pruned automatically.</span>
+        </div>
+      </div>
+
+      <div class="purge-toolbar">
+        <div class="purge-selection-summary">
+          SELECTED: <span id="purge-selected-count">0</span> / <span id="purge-total-matched-count">0</span> MATCHED FILES (<span id="purge-selected-size">0 KB</span>)
+        </div>
+        <div class="purge-toolbar-actions">
+          <label class="purge-filter-toggle" title="Filter to show only files detected in game directory">
+            <input type="checkbox" id="purge-filter-matched-only">
+            <span>SHOW ONLY MATCHED</span>
+          </label>
+          <button id="btn-purge-select-all" class="btn-slanted btn-small"><span>SELECT ALL</span></button>
+          <button id="btn-purge-deselect-all" class="btn-slanted btn-small"><span>DESELECT ALL</span></button>
+        </div>
+      </div>
+
+      <div class="modal-body custom-scroll purge-table-container">
+        <table class="table-p3r purge-table">
+          <thead>
+            <tr>
+              <th style="width: 44px; text-align: center;">DEL</th>
+              <th>RELATIVE GAME PATH</th>
+              <th>ARCHIVE SIZE</th>
+              <th>DISK SIZE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="purge-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-purge-cancel-action" class="btn-slanted"><span>ABORT</span></button>
+        <button id="btn-purge-confirm-execute" class="btn-slanted btn-danger btn-purge-confirm">
+          <span>⚠️ EXECUTE PURGE & CLEANUP</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="audio.js"></script>
+  <script src="caustics.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
