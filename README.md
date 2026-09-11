@@ -1,4 +1,4 @@
-﻿# Pod 006 // Monster Hunter World Mod Manager (P3R Theme)
+# Pod 006 // Monster Hunter World Mod Manager (P3R Theme)
 
 Pod 006 is a dedicated desktop mod manager for Monster Hunter: World, designed with a Persona 3 Reload tactical UI aesthetic. It streamlines mod staging, conflict resolution, archive extraction, and uninstallation with automated file tracking.
 
@@ -37,22 +37,34 @@ Pod 006 is distributed as a standalone Windows executable.
 Requirements: Python 3.10+ on Windows 10/11.
 
 1. Clone the repository:
+   ```bash
    git clone https://github.com/Velgoh/MHW-Mod-Manager-P3R-Themed.git
    cd MHW-Mod-Manager-P3R-Themed
+   ```
 
 2. Install dependencies:
+   ```bash
    pip install -r requirements.txt
+   ```
 
 3. Run from source:
+   ```bash
    python pod006/app.py
+   ```
 
 4. Build standalone executable:
+   ```bash
    pyinstaller pod006.spec
+   ```
 
 The compiled binary will be placed in the dist/ folder.
 
+---
+
 ## License & Copyright
 
-This project is open source and licensed under the MIT License. You are free to use, modify, distribute, and build upon this software, provided that proper credit and attribution are given to the original author (Velgoh).
+This project is open source and licensed under the [MIT License](LICENSE). You are free to use, modify, distribute, and build upon this software, provided that proper credit and attribution are given to the original author (Velgoh).
 
-Support: Glory to mankind.
+---
+*Glory to mankind.*
+
