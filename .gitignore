@@ -29,3 +29,6 @@ $RECYCLE.BIN/
 # IDE / Editor
 .vscode/
 .idea/
+
+tests/
+
